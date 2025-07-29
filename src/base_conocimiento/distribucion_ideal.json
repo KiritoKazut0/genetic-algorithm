@@ -1,0 +1,38 @@
+{
+  "Hardpoint": {
+    "roles_ideales": {
+      "slayer": 2,
+      "obj": 1,
+      "support": 1,
+      "igl": 1,
+      "sniper": 0
+    }
+  },
+  "Domination": {
+    "roles_ideales": {
+      "slayer": 1,
+      "obj": 2,
+      "support": 1,
+      "igl": 1,
+      "sniper": 0
+    }
+  },
+  "Control": {
+    "roles_ideales": {
+      "slayer": 1,
+      "obj": 1,
+      "support": 2,
+      "igl": 1,
+      "sniper": 0
+    }
+  },
+  "Search & Destroy": {
+    "roles_ideales": {
+      "slayer": 1,
+      "obj": 1,
+      "support": 1,
+      "igl": 1,
+      "sniper": 1
+    }
+  }
+}
