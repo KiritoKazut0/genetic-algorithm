@@ -3,11 +3,14 @@ import pandas as pd
 import json
 import random
 from objetives import objetivo1, objetivo2, objetivo3
-from operators import cruza, mutation, poda, seleccion
+from operators.seleccion import seleccion_torneo
+from operators.cruza import cruza_poblacion
+from operators.mutation import mutar_poblacion
+# from operators.poda import 
 from utils.fitnes_general import calcular_fitnes_general
 
 
-# obtencion de los datos del base de conociemiento
+
 df_jugadores = pd.read_csv("../src/base_conocimiento/jugadores.csv")
 df_sinergias = pd.read_csv("../src/base_conocimiento/sinergia_jugadores.csv")
 
@@ -55,10 +58,6 @@ def evaluar_poblacion(
     return resultados
 
 
-
-
-
-
 if __name__ == "__main__":
     poblacion_inicial = generar_poblacion()
     resultados_iniciales = evaluar_poblacion(poblacion_inicial, df_jugadores, df_sinergias, df_distribucion_en_modos)
@@ -90,11 +89,11 @@ if __name__ == "__main__":
     print(df_resultados[["Equipo", "Rendimiento", "Sinergia", "Roles", "Fitness General"]].to_string(index=False))
 
     # Parámetros para selección por torneo
-    tamaño_torneo = 3
-    num_selecciones = 6  # Ejemplo: seleccionar 5 equipos
+    tamaño_torneo = 10
+    num_selecciones = 10  # Ejemplo: seleccionar 5 equipos
 
     # Selección usando la función en operators.seleccion (asegúrate que esté importada correctamente)
-    seleccionados = seleccion.seleccion_torneo(poblacion_inicial, fitnesses, tamaño_torneo, num_selecciones)
+    seleccionados = seleccion_torneo(poblacion_inicial, fitnesses, tamaño_torneo, num_selecciones)
 
     # Obtener fitness de los seleccionados para mostrar
     fitness_seleccionados = []
@@ -115,5 +114,12 @@ if __name__ == "__main__":
     
     #seccion para ver como se representa la cruza con los demas equipos
     
-    df_cruza = cruza.cruza_poblacion(seleccionados)
+    df_cruza = cruza_poblacion(seleccionados)
+    print("RESULTADOS DE LA CRUZA")
     print(df_cruza)
+    
+    jugadores = df_jugadores["id"].tolist()
+    
+    df_mutacion = mutar_poblacion(df_cruza, jugadores )
+    print("RESULTADOS DE LA MUTACION")
+    print(df_mutacion)
