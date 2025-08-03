@@ -1,38 +1,39 @@
 {
-  "Hardpoint": {
-    "roles_ideales": {
+  "tamaño_equipo": 5,
+  "jugador_unico": true,
+  "roles_ideales": {
+    "hardpoint": {
       "slayer": 2,
       "obj": 1,
       "support": 1,
       "igl": 1,
       "sniper": 0
-    }
-  },
-  "Domination": {
-    "roles_ideales": {
+    },
+    "domination": {
       "slayer": 1,
       "obj": 2,
       "support": 1,
       "igl": 1,
       "sniper": 0
-    }
-  },
-  "Control": {
-    "roles_ideales": {
+    },
+    "control": {
       "slayer": 1,
       "obj": 1,
       "support": 2,
       "igl": 1,
       "sniper": 0
-    }
-  },
-  "Search & Destroy": {
-    "roles_ideales": {
+    },
+    "search_destroy": {
       "slayer": 1,
       "obj": 1,
       "support": 1,
       "igl": 1,
       "sniper": 1
     }
+  },
+  "pesos_fitness": {
+    "rendimiento": 0.4,
+    "sinergia": 0.3,
+    "balance_roles": 0.3
   }
 }
