@@ -1,74 +1,49 @@
-from typing import List, Dict, Tuple
+from typing import List, Dict, cast
 import pandas as pd
-import json
 import random
-from objetives import objetivo1, objetivo2, objetivo3
+from base_conocimiento.load_data import cargar_datos_base
 from operators.seleccion import seleccion_torneo
 from operators.cruza import cruza_poblacion
 from operators.mutation import mutar_poblacion
-# from operators.poda import 
+from operators.poda import poda
+from utils.evaluar_poblacion import evaluar_poblacion
 from utils.fitnes_general import calcular_fitnes_general
 
 
-
-df_jugadores = pd.read_csv("../src/base_conocimiento/jugadores.csv")
-df_sinergias = pd.read_csv("../src/base_conocimiento/sinergia_jugadores.csv")
-
-with open("../src/base_conocimiento/distribucion_ideal.json", "r") as file:
-    df_distribucion_en_modos = json.load(file)
+#base de conocimiento 
+df_jugadores, df_sinergia, reglas_torneo = cargar_datos_base()
+df_distribucion_en_modos = cast(Dict[str, Dict[str, int]], reglas_torneo.get("roles_ideales"))
+pesos_fitness = cast( Dict[str, float], reglas_torneo.get("pesos_fitness"))
+jugador_unico = reglas_torneo.get("jugador_unico", True)
 
 
 def generar_poblacion() -> List[List[int]]:
-    team_size = 5
-    num_equipos = 20
-
-    # Obtener lista de jugadores (IDs)
+    team_size = reglas_torneo.get("tamaño_equipo", 5)
+    
     jugadores = df_jugadores["id"].tolist()
-
-    # Barajar la lista para mezclar jugadores
+    num_equipos = len(jugadores)// team_size
+    
     random.shuffle(jugadores)
-
     poblacion = []
 
-    # Tomar bloques de 5 jugadores para formar cada equipo
     for i in range(num_equipos):
         equipo = jugadores[i * team_size : (i + 1) * team_size]
         poblacion.append(equipo)
 
     return poblacion
 
-def evaluar_poblacion(
-    poblacion: list[list[int]],
-    df_jugadores: pd.DataFrame,
-    df_sinergias: pd.DataFrame,
-    distribucion_ideal: Dict[str, Dict[str, Dict[str, int]]],
-):
-    resultados = []
-
-    for equipo in poblacion:
-        f1 = objetivo1.promedio_equipo_por_modo_juego(equipo, df_jugadores)
-        f2 = objetivo2.sinergia_equipo(equipo, df_sinergias)
-        f3_dict= objetivo3.equilibrio_roles_por_modo(
-            equipo, df_jugadores, distribucion_ideal
-        )
-        # print(resultados.append((f1,f2,f3_dict)))
-        f3 = sum(f3_dict.values()) / len(f3_dict) if f3_dict else 0.0
-        resultados.append((f1, f2, f3))
-
-    return resultados
-
 
 if __name__ == "__main__":
+    
     poblacion_inicial = generar_poblacion()
-    resultados_iniciales = evaluar_poblacion(poblacion_inicial, df_jugadores, df_sinergias, df_distribucion_en_modos)
+    resultados_iniciales = evaluar_poblacion(poblacion_inicial, df_jugadores, df_sinergia, df_distribucion_en_modos)
 
-    # Calcular fitness general para cada equipo
+    # Calcular fitness general
     datos_equipos = []
     fitnesses = []
     for i, (rendimiento, sinergia, promedio_roles) in enumerate(resultados_iniciales):
-        fitness = calcular_fitnes_general(rendimiento, sinergia, promedio_roles)
+        fitness = calcular_fitnes_general(rendimiento, sinergia, promedio_roles, pesos_fitness)
         fitnesses.append(fitness)
-
         datos_equipos.append({
             "Equipo": i + 1,
             "Jugadores": poblacion_inicial[i],
@@ -79,47 +54,66 @@ if __name__ == "__main__":
         })
 
     df_resultados = pd.DataFrame(datos_equipos)
+    print("\n📊 Población Inicial:")
+    print(df_resultados.to_string(index=False))
 
-    # Mostrar tabla de población inicial (solo IDs de jugadores)
-    print("\nPoblación Inicial (Equipos y Jugadores):")
-    print(df_resultados[["Equipo", "Jugadores"]].to_string(index=False))
-
-    # Mostrar tabla de evaluación (fitness y objetivos)
-    print("\nEvaluación de la Población Inicial:")
-    print(df_resultados[["Equipo", "Rendimiento", "Sinergia", "Roles", "Fitness General"]].to_string(index=False))
-
-    # Parámetros para selección por torneo
+    # Selección por torneo
     tamaño_torneo = 10
-    num_selecciones = 10  # Ejemplo: seleccionar 5 equipos
-
-    # Selección usando la función en operators.seleccion (asegúrate que esté importada correctamente)
+    num_selecciones = 10
     seleccionados = seleccion_torneo(poblacion_inicial, fitnesses, tamaño_torneo, num_selecciones)
 
-    # Obtener fitness de los seleccionados para mostrar
     fitness_seleccionados = []
     for equipo in seleccionados:
         idx = poblacion_inicial.index(equipo)
         fitness_seleccionados.append(fitnesses[idx])
 
-    # Crear DataFrame para mostrar seleccionados
     df_seleccionados = pd.DataFrame({
         "Equipo": [poblacion_inicial.index(eq) + 1 for eq in seleccionados],
         "Jugadores": seleccionados,
-        "Fitness General": [round(fit,3) for fit in fitness_seleccionados]
+        "Fitness General": [round(fit, 3) for fit in fitness_seleccionados]
     })
-
-    print("\nEquipos seleccionados en torneo:")
+    print("\n🏆 Equipos Seleccionados (Torneo):")
     print(df_seleccionados.to_string(index=False))
-    
-    
-    #seccion para ver como se representa la cruza con los demas equipos
-    
-    df_cruza = cruza_poblacion(seleccionados)
-    print("RESULTADOS DE LA CRUZA")
-    print(df_cruza)
-    
+
+    # 🚼 Cruza
+    hijos = cruza_poblacion(seleccionados, jugador_unico)
+    resultados_hijos = evaluar_poblacion(hijos, df_jugadores, df_sinergia, df_distribucion_en_modos)
+    df_cruza = pd.DataFrame([
+        {
+            "Hijo": i + 1,
+            "Jugadores": hijos[i],
+            "Fitness General": round(calcular_fitnes_general(*res, pesos_fitness), 3)
+        }
+        for i, res in enumerate(resultados_hijos)
+    ])
+    print("\n🔀 Resultados de la Cruza:")
+    print(df_cruza.to_string(index=False))
+
+    # 🧬 Mutación
     jugadores = df_jugadores["id"].tolist()
-    
-    df_mutacion = mutar_poblacion(df_cruza, jugadores )
-    print("RESULTADOS DE LA MUTACION")
-    print(df_mutacion)
+    mutantes = mutar_poblacion(hijos, jugadores, jugador_unico)
+    resultados_mutantes = evaluar_poblacion(mutantes, df_jugadores, df_sinergia, df_distribucion_en_modos)
+    df_mutacion = pd.DataFrame([
+        {
+            "Mutante": i + 1,
+            "Jugadores": mutantes[i],
+            "Fitness General": round(calcular_fitnes_general(*res, pesos_fitness), 3)
+        }
+        for i, res in enumerate(resultados_mutantes)
+    ])
+    print("\n🧬 Resultados de la Mutación:")
+    print(df_mutacion.to_string(index=False))
+
+    # 🌿 Poda (nueva población)
+    nueva_poblacion = poda(poblacion_inicial, mutantes, df_jugadores, df_sinergia, df_distribucion_en_modos, pesos_fitness)
+    resultados_nueva_poblacion = evaluar_poblacion(nueva_poblacion, df_jugadores, df_sinergia, df_distribucion_en_modos)
+    df_poda = pd.DataFrame([
+        {
+            "Nuevo Equipo": i + 1,
+            "Jugadores": nueva_poblacion[i],
+            "Fitness General": round(calcular_fitnes_general(*res, pesos_fitness), 3)
+        }
+        for i, res in enumerate(resultados_nueva_poblacion)
+    ])
+    print("\n🌿 Resultados de la Poda (Nueva Población):")
+    print(df_poda.to_string(index=False))

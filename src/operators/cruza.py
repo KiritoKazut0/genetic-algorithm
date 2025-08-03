@@ -3,7 +3,7 @@ from typing import List, Tuple
 from utils.crossover_utils import reparar_con_diferencia
 
 
-def cruza(padre1: List[int], padre2: List[int]) -> Tuple[List[int], List[int]]:
+def cruza(padre1: List[int], padre2: List[int], jugador_unico: bool) -> Tuple[List[int], List[int]]:
     if len(padre1) != len(padre2):
         raise ValueError("Los padres deben tener la misma longitud")
 
@@ -13,14 +13,16 @@ def cruza(padre1: List[int], padre2: List[int]) -> Tuple[List[int], List[int]]:
 
     hijo1 = padre1[:punto1] + padre2[punto1:punto2+1] + padre1[punto2+1:]
     hijo2 = padre2[:punto1] + padre1[punto1:punto2+1] + padre2[punto2+1:]
+    
+    if jugador_unico:
+        hijo1 = reparar_con_diferencia(hijo1, padre1)
+        hijo2 = reparar_con_diferencia(hijo2, padre2)
 
-    hijo1 = reparar_con_diferencia(hijo1, padre1)
-    hijo2 = reparar_con_diferencia(hijo2, padre2)
 
     return hijo1, hijo2
 
 
-def cruza_poblacion(equipos: List[List[int]]) -> List[List[int]]: 
+def cruza_poblacion(equipos: List[List[int]], jugador_unico:bool ) -> List[List[int]]: 
     nueva_generacion = []
     
     if len(equipos) % 2 != 0:
@@ -30,7 +32,7 @@ def cruza_poblacion(equipos: List[List[int]]) -> List[List[int]]:
         padre1 = equipos[i]
         padre2 = equipos[i + 1]
         
-        hijo1, hijo2 = cruza(padre1, padre2)
+        hijo1, hijo2 = cruza(padre1, padre2, jugador_unico)
         nueva_generacion.append(hijo1)
         nueva_generacion.append(hijo2)
     
