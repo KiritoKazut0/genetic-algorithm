@@ -24,9 +24,10 @@ def cruza(padre1: List[int], padre2: List[int], jugador_unico: bool) -> Tuple[Li
 
 def cruza_poblacion(equipos: List[List[int]], jugador_unico:bool ) -> List[List[int]]: 
     nueva_generacion = []
-    
+
     if len(equipos) % 2 != 0:
-        raise ValueError("La cantidad de equipos debe ser par para cruzarlos en pares.")
+         print(f"[❌ ERROR] Número impar de equipos: {len(equipos)}")
+         raise ValueError("La cantidad de equipos debe ser par para cruzarlos en pares.")
     
     for i in range(0, len(equipos), 2):
         padre1 = equipos[i]
