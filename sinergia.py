@@ -3,7 +3,7 @@ import random
 
 # Configuración
 random.seed(42)  # Para resultados reproducibles
-NUM_JUGADORES = 100
+NUM_JUGADORES = 200
 
 # Generar todas las combinaciones únicas (A < B) con sinergias aleatorias
 with open('sinergias_solo_ids.csv', 'w', newline='') as f:
